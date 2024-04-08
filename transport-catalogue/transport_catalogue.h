@@ -1,80 +1,59 @@
-// место для вашего кода
 #pragma once
 
-# include "geo.h"
+#include "geo.h"
 
-#include<vector>
-#include<string>
-#include<string_view>
-#include<deque>
-#include<unordered_map>
-#include<unordered_set>
-#include<optional>
-#include<stdexcept>
-#include<iostream>
-#include<set>
+#include <algorithm>
+#include <deque>
+#include <string>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-namespace transport {
+namespace transport_catalogue {
 
-//информация об остановке
-    struct Stop {
-        std::string name; // название остановки
-        geo::Coordinates coordinates; // координаты остановки
-    };
-    
-    //информация о маршруте
-    struct Bus {
-        std::string number; //номер маршрута
-        std::vector<std::string> bus_stops; // маршрут, список остановок
-    };
-    
-    //информация для ответа на запрос о маршруте
-    struct BusAnswer {
-        int stops_count; // колличество остановок в запрашиваемом маршруте
-        int uniq_stops_count; //колличество уникальных остановок в запрашиваемом маршруте
-        double route_length; // протяженность маршрута
-    };
-
-class Catalogue {
-    
-// Реализуйте класс самостоятельно
-    public:
-    
-//добавление маршрута в базу, то есть добавляем структуру BUS в деку buses
-    void AddRoute(const std::string& number, const std::vector<std::string>& bus_stops);
-    
-//добавление остановки в базу, то есть добавляем структуру STOP в деку stops
-    void AddStop(const std::string& name, const geo::Coordinates& coordinates);
-    
-//поиск маршрута по имени, то есть ищем структуру BUS в справочнике buses_info
-    const Bus* FindRoute(const std::string& number) const;
-    
-//поиск остановки по имени, то есть ищем структуру STOP в справочнике stops_info
-    const Stop* FindStop(const std::string& name) const;
-    
-//получение информации о маршруте, то есть оформляем структуру BusAnswer
-    const BusAnswer FindInfo (const std::string& number) const;
-    
-//расчет количества уникальных остановок, то есть считаем количество неповторяющихся остановок на маршруте
-   // int CalcUniqStops(const std::string& number) const;
-    
-// поиск маршрутов проезжающих через остановку
-    const std::set<std::string_view> FindBusesOnStop (const std::string& name) const;
-    
-    private:
-        std::deque<Bus> buses_; // маршруты
-        std::deque<Stop> stops_; // остановки
-        std::unordered_map<std::string_view, const Bus*> buses_info_; // справочник маршрутов
-        std::unordered_map<std::string_view, const Stop*> stops_info_; // справочник остановок
-        std::unordered_map<std::string_view, std::set<std::string_view>> buses_on_stops_;
-    
-        //расчет количества уникальных остановок, то есть считаем количество неповторяющихся остановок на маршруте
-        int CalcUniqStops(const std::string& number) const {
-            std::unordered_set<std::string> uniq_stops;
-            for (const auto& stop : buses_info_.at(number)->bus_stops) {
-                uniq_stops.insert(stop);
-            }
-            return uniq_stops.size();
-        }
+struct Bus {
+    std::string id;
+    std::vector<std::string> stops;
 };
-} // namespace transport
+    
+struct BusInfo {
+    size_t stops;
+    size_t unique_stops;
+    unsigned int route_length;
+    double curvature;
+};
+
+struct Stop {
+    std::string id;
+    geo::Coordinates coordinates;
+};
+
+class TransportCatalogue {
+public:
+
+    struct DistancesHasher {
+        size_t operator()(const std::pair<const Stop*, const Stop*>& stops) const {
+            size_t hash_first = std::hash<const void*>{}(stops.first);
+            size_t hash_second = std::hash<const void*>{}(stops.second);
+            return hash_first + hash_second * 37;
+        }
+    };
+    
+    void AddBus(const std::string& id, const std::vector<std::string>& stops);
+    void AddStop(const std::string& id, geo::Coordinates& coordinates);
+    void AddDistances(const std::string& id, const std::unordered_map<std::string, unsigned int>& distances);
+    const Bus* FindBus(const std::string& id) const;
+    const Stop* FindStop(const std::string& id) const;
+    unsigned int GetDistance(const Stop* start_stop, const Stop* reach_stop) const;
+    BusInfo GetBusInfo(const Bus* bus) const;
+    std::set<std::string> GetStopInfo(const Stop* stop) const;
+
+private:
+    std::deque<Bus> buses_;
+    std::deque<Stop> stops_;
+    std::unordered_map<std::string, std::set<std::string>> buses_for_stop_;
+    std::unordered_map<std::pair<const Stop*, const Stop*>, unsigned int, DistancesHasher> distances_;
+};
+    
+} //transport_catalogue
