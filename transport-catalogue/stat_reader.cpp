@@ -1,64 +1,92 @@
-// место для вашего кода
 #include "stat_reader.h"
+
 #include <iomanip>
-#include <utility>
 
-namespace transport {
-namespace detail {
+namespace reader {
     
-std::pair<std::string, std::string> GetCommandRequest(std::string_view request) {
-    auto space_pos = request.find(' ');
-    auto not_space = request.find_first_not_of(' ', space_pos);
-    std::string key = std::string(request.substr(0, space_pos));
-    std::string value = std::string(request.substr(not_space));
-    return {key,value};
+namespace stat {
+
+/**
+* Удаляет пробелы в начале и конце строки
+*/
+std::string_view Trim(std::string_view string) {
+    const auto start = string.find_first_not_of(' ');
+    if (start == string.npos) {
+        return {};
+    }
+    return string.substr(start, string.find_last_not_of(' ') + 1 - start);
 }
-
-} //namespace detail  
     
-void ParseAndPrintStatBus(const Catalogue& catalogue, std::string_view request,
-                       std::ostream& output) {
-
-    std::string key = transport::detail::GetCommandRequest(request).first;
-    std::string value = transport::detail::GetCommandRequest(request).second;
-    if (key == "Bus") {
-
-    if (catalogue.FindRoute(value)) {
-            output << "Bus " << value << ": " 
-                << catalogue.FindInfo(value).stops_count << " stops on route, "
-                << catalogue.FindInfo(value).uniq_stops_count << " unique stops, " << std::setprecision(6)
-                << catalogue.FindInfo(value).route_length << " route length\n";
-        }
-        else {
-            output << "Bus " << value << ": not found\n";
-        }
+void PrintBusInfo(const transport_catalogue::TransportCatalogue& catalogue, 
+                  const std::string& id, std::ostream& output) {
+    
+    output << "Bus " << id << ": ";
+    const transport_catalogue::Bus* bus = catalogue.FindBus(id);
+    if (!bus){
+        output << "not found" << std::endl;
+    }
+    else {
+        transport_catalogue::BusInfo info = catalogue.GetBusInfo(bus);
+        output << info.stops << " stops on route, " <<
+            info.unique_stops << " unique stops, " <<
+            info.route_length << " route length, " <<
+            info.curvature << " curvature" << std::endl;
     }
 }
     
-void ParseAndPrintStatStop(const Catalogue& catalogue, std::string_view request,
-                       std::ostream& output) {
-
-    std::string key = transport::detail::GetCommandRequest(request).first;
-    std::string value = transport::detail::GetCommandRequest(request).second;
+void PrintStopInfo(const transport_catalogue::TransportCatalogue& catalogue, 
+                  const std::string& id, std::ostream& output) {
     
-    if (key == "Stop") {
-        if (catalogue.FindStop(value)) {
-                output << "Stop " << value << ": ";
-                std::set<std::string_view> buses = catalogue.FindBusesOnStop(value);
-                if (!buses.empty()) {
-                    output << "buses ";
-                    for (const auto& bus : buses) {
-                        output << bus << " ";
-                    }
-                    output << "\n";
-                }
-                else {
-                    output << "no buses\n";
-                }
-            }
-            else {
-                output << "Stop " << value << ": not found\n";
-            }
+    output << "Stop " << id << ": ";
+    const transport_catalogue::Stop* stop = catalogue.FindStop(id);
+    if (!stop) {
+        output << "not found" << std::endl;
+    }
+    else{
+        std::set<std::string> info = catalogue.GetStopInfo(stop);
+        if(info.empty()) {
+            output << "no buses" << std::endl;
         }
-    }   
-} // namespace transport
+        else {
+            output << "buses";
+            for(const auto& bus : info){
+                output << " " << bus;
+            }
+            output << std::endl;
+        }
+    }
+}
+
+void ParseAndPrintStat(const transport_catalogue::TransportCatalogue& catalogue, 
+                       std::string_view request, std::ostream& output) {
+    
+    request = Trim(request);
+    auto space_pos = request.find(' ');
+    auto not_space = request.find_first_not_of(' ', space_pos);
+    
+    std::string command = std::string{request.substr(0, space_pos)};
+    std::string id = std::string{request.substr(not_space)};
+    
+    if(command == "Bus"){
+        PrintBusInfo(catalogue, id, output);
+    }
+    else if(command == "Stop"){
+        PrintStopInfo(catalogue, id, output);
+    }
+}
+    
+void Read(const transport_catalogue::TransportCatalogue& catalogue, 
+          std::istream& input, std::ostream& output) {
+    
+    int stat_request_count;
+    input >> stat_request_count >> std::ws;
+    for (int i = 0; i < stat_request_count; ++i) {
+        std::string line;
+        getline(input, line);
+        ParseAndPrintStat(catalogue, line, output);
+    }
+}
+    
+} //namespace stat
+    
+} //namespace reader
