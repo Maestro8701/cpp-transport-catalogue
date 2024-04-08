@@ -1,4 +1,5 @@
 #pragma once
+#include <iomanip>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -6,10 +7,11 @@
 #include "geo.h"
 #include "transport_catalogue.h"
 
-namespace transport {
+namespace reader {
+    
+namespace input {
 
 struct CommandDescription {
-    
     // Определяет, задана ли команда (поле command непустое)
     explicit operator bool() const {
         return !command.empty();
@@ -26,7 +28,6 @@ struct CommandDescription {
 
 class InputReader {
 public:
-    
     /**
      * Парсит строку в структуру CommandDescription и сохраняет результат в commands_
      */
@@ -35,9 +36,15 @@ public:
     /**
      * Наполняет данными транспортный справочник, используя команды из commands_
      */
-    void ApplyCommands(Catalogue& catalogue) const;
+    void ApplyCommands(transport_catalogue::TransportCatalogue& catalogue) const;
+    void AddDistances(transport_catalogue::TransportCatalogue& catalogue) const;
 
 private:
     std::vector<CommandDescription> commands_;
 };
-} //namespace transport
+    
+void Read(transport_catalogue::TransportCatalogue& catalogue, std::istream& input);
+    
+} //namespace input
+    
+} //namespace reader
