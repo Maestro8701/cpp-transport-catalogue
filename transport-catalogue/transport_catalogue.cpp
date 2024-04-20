@@ -14,13 +14,10 @@ void TransportCatalogue::AddStop(const std::string& id, geo::Coordinates& coordi
     stops_.push_back({ id, coordinates });
 }
 
-void TransportCatalogue::AddDistances(const std::string& id, const std::unordered_map<std::string, unsigned int>& distances) {
-    auto start_stop = FindStop(id);
-    for (auto i = distances.begin(); i != distances.end(); i++) {
-        auto reach_stop = FindStop(i->first);
-        auto distance = i->second;
-        distances_.insert({ {start_stop, reach_stop}, distance });
-    }
+void TransportCatalogue::AddDistances(const std::string& start, const std::string& finish, unsigned int distance) {
+    auto start_stop = FindStop(start);
+    auto reach_stop = FindStop(finish);
+    distances_.insert({ {start_stop, reach_stop}, distance} );
 }
 
 const Bus* TransportCatalogue::FindBus(const std::string& id) const {    
