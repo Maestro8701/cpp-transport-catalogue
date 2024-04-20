@@ -42,7 +42,7 @@ public:
     
     void AddBus(const std::string& id, const std::vector<std::string>& stops);
     void AddStop(const std::string& id, geo::Coordinates& coordinates);
-    void AddDistances(const std::string& id, const std::unordered_map<std::string, unsigned int>& distances);
+    void AddDistances (const std::string& start, const std::string& finish, unsigned int distance);
     const Bus* FindBus(const std::string& id) const;
     const Stop* FindStop(const std::string& id) const;
     unsigned int GetDistance(const Stop* start_stop, const Stop* reach_stop) const;
