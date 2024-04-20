@@ -149,7 +149,9 @@ void InputReader::AddDistances([[maybe_unused]] transport_catalogue::TransportCa
     for (const auto& command : commands_) {
         if (command.command == "Stop") {
             std::unordered_map<std::string, unsigned int> distances = ParceDistances(command.description);
-            catalogue.AddDistances(command.id, distances);
+            for ( const auto& [stop,distance] : distances) {
+                catalogue.AddDistances(command.id, stop, distance);
+            }
         }
     }
 }
