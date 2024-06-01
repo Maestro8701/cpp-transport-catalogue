@@ -1,59 +1,90 @@
 #pragma once
 
-#include "geo.h"
-
-#include <algorithm>
+#include <set>
+#include <iostream>
+#include <string>
 #include <deque>
 #include <string>
-#include <set>
+#include <string_view>
 #include <unordered_map>
-#include <unordered_set>
+#include <map>
 #include <vector>
+#include "geo.h"
 
-namespace transport_catalogue {
-
-struct Bus {
-    std::string id;
-    std::vector<std::string> stops;
-};
-    
-struct BusInfo {
-    size_t stops;
-    size_t unique_stops;
-    unsigned int route_length;
-    double curvature;
-};
+namespace TC {
 
 struct Stop {
-    std::string id;
-    geo::Coordinates coordinates;
+	std::string name;
+	geo::Coordinates coordinates;
+ 
+	explicit Stop(std::string name, geo::Coordinates coordinates) :
+		name(name), coordinates(coordinates) {}
+};
+ 
+struct Bus {
+	std::string name;
+	std::vector<Stop*> stops;
+    bool is_roundtrip;
+ 
+	explicit Bus(std::string_view name, std::vector<Stop*> stops, bool is_roundtrip) :
+		name(name), stops(stops), is_roundtrip(is_roundtrip) {}
+};
+ 
+struct BusInfo {
+	bool bus_exists = false;
+	size_t count_stops = 0;
+	size_t count_unique_stops = 0;
+	double length_route = 0;
+    double curvature = 1;
+};
+ 
+struct StopInfo {
+	bool stop_exists = false;
+	std::set<std::string_view> buses{};
 };
 
+class StopPairHasher {
+    public:
+    
+    std::size_t operator()(const std::pair<TC::Stop*, TC::Stop*>& stop_pair) const {
+        std::size_t s1 = std::hash<const void*>{}(stop_pair.first);
+        std::size_t s2 = std::hash<const void*>{}(stop_pair.second);
+        return s1 + s2 * 7;
+    }
+};       
+    
 class TransportCatalogue {
-public:
+	// Реализуйте класс самостоятельно
+	public:
+		void AddStop(const std::string& name, geo::Coordinates coordinates);
+ 
+        void AddRouteDistance(const std::string& name, const std::pair<double, std::string>& stop_pair);    
 
-    struct DistancesHasher {
-        size_t operator()(const std::pair<const Stop*, const Stop*>& stops) const {
-            size_t hash_first = std::hash<const void*>{}(stops.first);
-            size_t hash_second = std::hash<const void*>{}(stops.second);
-            return hash_first + hash_second * 37;
-        }
-    };
+		void AddBus(std::string_view name, const std::vector<std::string_view>& stops_name, bool is_roundtrip);
+ 
+		BusInfo GetBusInfo(std::string_view name) const;
+ 
+		StopInfo GetStopInfo(std::string_view stop_name) const;
+         
+        const std::map<std::string_view, Bus*>& GetRoutes() const;
     
-    void AddBus(const std::string& id, const std::vector<std::string>& stops);
-    void AddStop(const std::string& id, geo::Coordinates& coordinates);
-    void AddDistances (const std::string& start, const std::string& finish, unsigned int distance);
-    const Bus* FindBus(const std::string& id) const;
-    const Stop* FindStop(const std::string& id) const;
-    unsigned int GetDistance(const Stop* start_stop, const Stop* reach_stop) const;
-    BusInfo GetBusInfo(const Bus* bus) const;
-    std::set<std::string> GetStopInfo(const Stop* stop) const;
-
-private:
-    std::deque<Bus> buses_;
-    std::deque<Stop> stops_;
-    std::unordered_map<std::string, std::set<std::string>> buses_for_stop_;
-    std::unordered_map<std::pair<const Stop*, const Stop*>, unsigned int, DistancesHasher> distances_;
-};
+        const std::map<std::string_view, Stop*>& GetStops() const;
     
-} //transport_catalogue
+        const std::unordered_map<Stop*, std::set<std::string_view>>& GetStopToBuses() const;
+    
+        
+            
+	private:
+		std::deque<Stop> stops_;
+		std::map<std::string_view, Stop*> stopname_to_stop_;
+ 
+		std::deque<Bus> buses_;
+		std::map<std::string_view, Bus*> busname_to_bus_;
+ 
+		// индекс указатель на остановки - множество автобусов
+		std::unordered_map<Stop*, std::set<std::string_view>> stop_to_buses_;
+    
+        std::unordered_map<std::pair<Stop*, Stop*>, double, StopPairHasher> route_distances_;
+}; 
+    
+}
