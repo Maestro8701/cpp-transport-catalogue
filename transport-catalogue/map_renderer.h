@@ -140,4 +140,4 @@ class MapRenderer {
     void SetSettings(RenderSettings settings);
     
     SphereProjector SetProjector(const std::map<std::string_view, Bus*>& routes);
-};a
+};
