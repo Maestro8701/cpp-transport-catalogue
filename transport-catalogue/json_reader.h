@@ -9,6 +9,7 @@
 #include "request_handler.h"
 #include "map_renderer.h"
 #include <sstream>
+#include "json_builder.h"
 
 /*
  * Здесь можно разместить код наполнения транспортного справочника данными из JSON,
@@ -24,10 +25,10 @@ class JsonReader {
     void AddRouteDistances(const json::Array& base_requests, TransportCatalogue& catalogue);
     void AddBuses(const json::Array& base_requests, TransportCatalogue& catalogue);
     void ApplyBaseCommands(const json::Array& base_requests, TransportCatalogue& catalogue);
-    void ApplyGetBuses(RequestHandler& request_handler, json::Dict& response, const json::Dict& request);
-    void ApplyGetStops(RequestHandler& request_handler, json::Dict& response, const json::Dict& request);
+    void ApplyGetBuses(RequestHandler& request_handler, json::Builder& builder, const json::Dict& request);
+    void ApplyGetStops(RequestHandler& request_handler, json::Builder& builder, const json::Dict& request);
     json::Node ApplyStatCommands(const json::Array& stat_requests, RequestHandler& request_handler);
-    void ApplyGetMap(RequestHandler& request_handler, json::Dict& response);
+    void ApplyGetMap(RequestHandler& request_handler, json::Builder& builder);
     svg::Color SetColor(const json::Node& render_setting);
         
     public:
