@@ -1,23 +1,29 @@
-#include <cstdio>
+// Вставьте сюда решение из предыдущего спринта
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 #include "json_reader.h"
-#include "request_handler.h"
-#include "transport_catalogue.h"
+
+using namespace std;
+using namespace json;
 
 int main() {
-    /*
-     * Примерная структура программы:
-     *
-     * Считать JSON из stdin
-     * Построить на его основе JSON базу данных транспортного справочника
-     * Выполнить запросы к справочнику, находящиеся в массива "stat_requests", построив JSON-массив
-     * с ответами Вывести в stdout ответы в виде JSON
-     */
-    TC::TransportCatalogue catalogue;
-    MapRenderer renderer;
-    RequestHandler request_handler(catalogue, renderer);
-    JsonReader json_reader(json::Load(std::cin));
-    renderer.SetSettings(json_reader.GetRenderSettings());
-    renderer.CreateDocument(request_handler.GetRoutes(), request_handler.GetStops(), request_handler.GetStopToBuses());
-    json::Print(json_reader.ApplyCommands(request_handler, catalogue), std::cout);
+    TransportCatalogue catalogue;
+    renderer::MapRenderer renderer;
+    transport_router::TransportRouter router(catalogue);
+    RequestHandler handler(catalogue, renderer, router);
+    JsonReader reader;
+    reader.LoadHandler(handler);
+
+    istream& input = cin;
+    reader.LoadJson(input);
+
+    reader.AddStopsDataToCatalogue();
+    reader.AddBusesDataToCatalogue();
+    reader.AddRoutingSetting();
+    reader.ParseRenderSettings(renderer);
+
+    ostream& out = cout;
+    reader.ParseAndPrintStat(handler, out);   
 }
