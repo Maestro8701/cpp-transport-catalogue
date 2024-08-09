@@ -22,7 +22,7 @@ namespace json {
         const Dict& GetRoutingSetting() const;
         void AddStopsDataToCatalogue()  const;
         void AddBusesDataToCatalogue()  const;
-        void AddRoutingSetting()        const;
+        RoutingSettings AddRoutingSetting() const;
         svg::Color HandlingColor(const Node& value) const;
         void ParseRenderSettings(renderer::MapRenderer& renderer) const;
         Node GetStatForBusRequest(const std::string_view name, int request_id);
