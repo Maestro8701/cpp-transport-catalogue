@@ -80,12 +80,12 @@ namespace json {
             }
         }
     }
-
-    void JsonReader::AddRoutingSetting() const {
+    
+    RoutingSettings JsonReader::AddRoutingSetting() const {
         RoutingSettings settings(GetRoutingSetting().at("bus_wait_time").AsDouble(), GetRoutingSetting().at("bus_velocity").AsDouble());
-        const_cast<transport_router::TransportRouter&>(handler_->GetRouter()).SetRoutingSettings(settings);
+        return settings;
     }
-
+    
     svg::Color JsonReader::HandlingColor(const Node& value) const {
         if (value.IsString()) {
             return value.AsString();
